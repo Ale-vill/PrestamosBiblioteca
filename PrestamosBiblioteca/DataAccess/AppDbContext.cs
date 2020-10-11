@@ -1,15 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using PrestamosBiblioteca.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PrestamosBiblioteca.DataAccess
 {
-    public class AppDbContext:DbContext
+    public sealed class AppDbContext:DbContext
     {
+        private readonly IHostEnvironment _hostEnvironment;
         public DbSet<Facultad> Facultades { get; set; }
         public DbSet<Carrera> Carreras { get; set; }
         public DbSet<Prestamo> Prestamos { get; set; }
@@ -20,10 +17,10 @@ namespace PrestamosBiblioteca.DataAccess
         {
 
         }
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options,IHostEnvironment hostEnvironment) : base(options)
         {
-
-            Database.SetCommandTimeout(3600);
+            _hostEnvironment = hostEnvironment;
+            Database?.SetCommandTimeout(3600);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -31,6 +28,9 @@ namespace PrestamosBiblioteca.DataAccess
             modelBuilder.Entity<Usuario>().HasIndex(x => x.Codigo).IsUnique();
             modelBuilder.Entity<Marca>().HasData(DataSeeder.Marcas);
             modelBuilder.Entity<Equipo>().HasData(DataSeeder.Equipos);
+            modelBuilder.Entity<Equipo>().Property(e => e.Disponibilidad).HasDefaultValue(true);
+            modelBuilder.Entity<Carrera>().HasData(DataSeeder.GetCarreras(_hostEnvironment));
+
             base.OnModelCreating(modelBuilder);
         }
     }

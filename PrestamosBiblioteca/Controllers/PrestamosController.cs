@@ -8,23 +8,23 @@ using System.Threading.Tasks;
 
 namespace PrestamosBiblioteca.Controllers
 {
-    public class EquiposController : Controller
+    public class PrestamosController : Controller
     {
         private readonly AppDbContext _context;
 
-        public EquiposController(AppDbContext context)
+        public PrestamosController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: Equipos
+        // GET: Prestamos
         public async Task<IActionResult> Index()
         {
-            var appDbContext = _context.Equipos.Include(e => e.Marca);
+            var appDbContext = _context.Prestamos.Include(p => p.Equipo);
             return View(await appDbContext.ToListAsync());
         }
 
-        // GET: Equipos/Details/5
+        // GET: Prestamos/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -32,42 +32,44 @@ namespace PrestamosBiblioteca.Controllers
                 return NotFound();
             }
 
-            var equipo = await _context.Equipos
-                .Include(e => e.Marca)
-                .FirstOrDefaultAsync(m => m.EquipoId == id);
-            if (equipo == null)
+            var prestamo = await _context.Prestamos
+                .Include(p => p.Equipo)
+                .FirstOrDefaultAsync(m => m.PrestamoId == id);
+            if (prestamo == null)
             {
                 return NotFound();
             }
 
-            return View(equipo);
+            return View(prestamo);
         }
 
-        // GET: Equipos/Create
+        // GET: Prestamos/Create
         public IActionResult Create()
         {
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "MarcaId", "Nombre");
+            var equipos = _context.Equipos.Where(e => e.Disponibilidad);
+            ViewData["EquipoId"] = new SelectList(equipos, "EquipoId", "Codigo");
             return View();
         }
 
-        // POST: Equipos/Create
+        // POST: Prestamos/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("EquipoId,Codigo,Descripcion,Modelo,Disponibilidad,MarcaId")] Equipo equipo)
+        public async Task<IActionResult> Create([Bind("PrestamoId,Entrega,Devolucion,Observacion,UsuarioId,EquipoId")] Prestamo prestamo)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(equipo);
+                _context.Add(prestamo);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "MarcaId", "Nombre", equipo.MarcaId);
-            return View(equipo);
+            var equipos = _context.Equipos.Where(e => e.Disponibilidad);
+            ViewData["EquipoId"] = new SelectList(equipos, "EquipoId", "Codigo", prestamo.EquipoId);
+            return View(prestamo);
         }
 
-        // GET: Equipos/Edit/5
+        // GET: Prestamos/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -75,23 +77,24 @@ namespace PrestamosBiblioteca.Controllers
                 return NotFound();
             }
 
-            var equipo = await _context.Equipos.FindAsync(id);
-            if (equipo == null)
+            var prestamo = await _context.Prestamos.FindAsync(id);
+            if (prestamo == null)
             {
                 return NotFound();
             }
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "MarcaId", "Nombre", equipo.MarcaId);
-            return View(equipo);
+            var equipos = _context.Equipos.Where(e => e.Disponibilidad);
+            ViewData["EquipoId"] = new SelectList(equipos, "EquipoId", "Codigo", prestamo.EquipoId);
+            return View(prestamo);
         }
 
-        // POST: Equipos/Edit/5
+        // POST: Prestamos/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("EquipoId,Codigo,Descripcion,Modelo,Disponibilidad,MarcaId")] Equipo equipo)
+        public async Task<IActionResult> Edit(int id, [Bind("PrestamoId,Entrega,Devolucion,Observacion,UsuarioId,EquipoId")] Prestamo prestamo)
         {
-            if (id != equipo.EquipoId)
+            if (id != prestamo.PrestamoId)
             {
                 return NotFound();
             }
@@ -100,12 +103,12 @@ namespace PrestamosBiblioteca.Controllers
             {
                 try
                 {
-                    _context.Update(equipo);
+                    _context.Update(prestamo);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!EquipoExists(equipo.EquipoId))
+                    if (!PrestamoExists(prestamo.PrestamoId))
                     {
                         return NotFound();
                     }
@@ -116,11 +119,12 @@ namespace PrestamosBiblioteca.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "MarcaId", "Nombre", equipo.MarcaId);
-            return View(equipo);
+            var equipos = _context.Equipos.Where(e => e.Disponibilidad);
+            ViewData["EquipoId"] = new SelectList(equipos, "EquipoId", "Codigo", prestamo.EquipoId);
+            return View(prestamo);
         }
 
-        // GET: Equipos/Delete/5
+        // GET: Prestamos/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -128,31 +132,31 @@ namespace PrestamosBiblioteca.Controllers
                 return NotFound();
             }
 
-            var equipo = await _context.Equipos
-                .Include(e => e.Marca)
-                .FirstOrDefaultAsync(m => m.EquipoId == id);
-            if (equipo == null)
+            var prestamo = await _context.Prestamos
+                .Include(p => p.Equipo)
+                .FirstOrDefaultAsync(m => m.PrestamoId == id);
+            if (prestamo == null)
             {
                 return NotFound();
             }
 
-            return View(equipo);
+            return View(prestamo);
         }
 
-        // POST: Equipos/Delete/5
+        // POST: Prestamos/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var equipo = await _context.Equipos.FindAsync(id);
-            _context.Equipos.Remove(equipo);
+            var prestamo = await _context.Prestamos.FindAsync(id);
+            _context.Prestamos.Remove(prestamo);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool EquipoExists(int id)
+        private bool PrestamoExists(int id)
         {
-            return _context.Equipos.Any(e => e.EquipoId == id);
+            return _context.Prestamos.Any(e => e.PrestamoId == id);
         }
     }
 }

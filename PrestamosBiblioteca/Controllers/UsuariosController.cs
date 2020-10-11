@@ -8,23 +8,23 @@ using System.Threading.Tasks;
 
 namespace PrestamosBiblioteca.Controllers
 {
-    public class EquiposController : Controller
+    public class UsuariosController : Controller
     {
         private readonly AppDbContext _context;
 
-        public EquiposController(AppDbContext context)
+        public UsuariosController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: Equipos
+        // GET: Usuarios
         public async Task<IActionResult> Index()
         {
-            var appDbContext = _context.Equipos.Include(e => e.Marca);
+            var appDbContext = _context.Usuarios.Include(u => u.Carrera);
             return View(await appDbContext.ToListAsync());
         }
 
-        // GET: Equipos/Details/5
+        // GET: Usuarios/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -32,42 +32,42 @@ namespace PrestamosBiblioteca.Controllers
                 return NotFound();
             }
 
-            var equipo = await _context.Equipos
-                .Include(e => e.Marca)
-                .FirstOrDefaultAsync(m => m.EquipoId == id);
-            if (equipo == null)
+            var usuario = await _context.Usuarios
+                .Include(u => u.Carrera)
+                .FirstOrDefaultAsync(m => m.UsuarioId == id);
+            if (usuario == null)
             {
                 return NotFound();
             }
 
-            return View(equipo);
+            return View(usuario);
         }
 
-        // GET: Equipos/Create
+        // GET: Usuarios/Create
         public IActionResult Create()
         {
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "MarcaId", "Nombre");
+            ViewData["CarreraId"] = new SelectList(_context.Carreras, "CarreraId", "Nombre");
             return View();
         }
 
-        // POST: Equipos/Create
+        // POST: Usuarios/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("EquipoId,Codigo,Descripcion,Modelo,Disponibilidad,MarcaId")] Equipo equipo)
+        public async Task<IActionResult> Create([Bind("UsuarioId,Codigo,Nombres,Apellidos,Institucion,NivelAcademico,Genero,CarreraId")] Usuario usuario)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(equipo);
+                _context.Add(usuario);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "MarcaId", "Nombre", equipo.MarcaId);
-            return View(equipo);
+            ViewData["CarreraId"] = new SelectList(_context.Carreras, "CarreraId", "Nombre", usuario.CarreraId);
+            return View(usuario);
         }
 
-        // GET: Equipos/Edit/5
+        // GET: Usuarios/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -75,23 +75,23 @@ namespace PrestamosBiblioteca.Controllers
                 return NotFound();
             }
 
-            var equipo = await _context.Equipos.FindAsync(id);
-            if (equipo == null)
+            var usuario = await _context.Usuarios.FindAsync(id);
+            if (usuario == null)
             {
                 return NotFound();
             }
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "MarcaId", "Nombre", equipo.MarcaId);
-            return View(equipo);
+            ViewData["CarreraId"] = new SelectList(_context.Carreras, "CarreraId", "Nombre", usuario.CarreraId);
+            return View(usuario);
         }
 
-        // POST: Equipos/Edit/5
+        // POST: Usuarios/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("EquipoId,Codigo,Descripcion,Modelo,Disponibilidad,MarcaId")] Equipo equipo)
+        public async Task<IActionResult> Edit(int id, [Bind("UsuarioId,Codigo,Nombres,Apellidos,Institucion,NivelAcademico,Genero,CarreraId")] Usuario usuario)
         {
-            if (id != equipo.EquipoId)
+            if (id != usuario.UsuarioId)
             {
                 return NotFound();
             }
@@ -100,12 +100,12 @@ namespace PrestamosBiblioteca.Controllers
             {
                 try
                 {
-                    _context.Update(equipo);
+                    _context.Update(usuario);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!EquipoExists(equipo.EquipoId))
+                    if (!UsuarioExists(usuario.UsuarioId))
                     {
                         return NotFound();
                     }
@@ -116,11 +116,11 @@ namespace PrestamosBiblioteca.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "MarcaId", "Nombre", equipo.MarcaId);
-            return View(equipo);
+            ViewData["CarreraId"] = new SelectList(_context.Carreras, "CarreraId", "Nombre", usuario.CarreraId);
+            return View(usuario);
         }
 
-        // GET: Equipos/Delete/5
+        // GET: Usuarios/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -128,31 +128,31 @@ namespace PrestamosBiblioteca.Controllers
                 return NotFound();
             }
 
-            var equipo = await _context.Equipos
-                .Include(e => e.Marca)
-                .FirstOrDefaultAsync(m => m.EquipoId == id);
-            if (equipo == null)
+            var usuario = await _context.Usuarios
+                .Include(u => u.Carrera)
+                .FirstOrDefaultAsync(m => m.UsuarioId == id);
+            if (usuario == null)
             {
                 return NotFound();
             }
 
-            return View(equipo);
+            return View(usuario);
         }
 
-        // POST: Equipos/Delete/5
+        // POST: Usuarios/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var equipo = await _context.Equipos.FindAsync(id);
-            _context.Equipos.Remove(equipo);
+            var usuario = await _context.Usuarios.FindAsync(id);
+            _context.Usuarios.Remove(usuario);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool EquipoExists(int id)
+        private bool UsuarioExists(int id)
         {
-            return _context.Equipos.Any(e => e.EquipoId == id);
+            return _context.Usuarios.Any(e => e.UsuarioId == id);
         }
     }
 }
