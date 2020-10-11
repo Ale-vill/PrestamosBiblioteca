@@ -17,7 +17,8 @@ namespace PrestamosBiblioteca.DataAccess
         {
 
         }
-        public AppDbContext(DbContextOptions<AppDbContext> options,IHostEnvironment hostEnvironment) : base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options,
+            IHostEnvironment hostEnvironment) : base(options)
         {
             _hostEnvironment = hostEnvironment;
             Database?.SetCommandTimeout(3600);
@@ -28,7 +29,7 @@ namespace PrestamosBiblioteca.DataAccess
             modelBuilder.Entity<Usuario>().HasIndex(x => x.Codigo).IsUnique();
             modelBuilder.Entity<Marca>().HasData(DataSeeder.Marcas);
             modelBuilder.Entity<Equipo>().HasData(DataSeeder.Equipos);
-            modelBuilder.Entity<Equipo>().Property(e => e.Disponibilidad).HasDefaultValue(true);
+            modelBuilder.Entity<Facultad>().HasData(DataSeeder.GetFacultades(_hostEnvironment));
             modelBuilder.Entity<Carrera>().HasData(DataSeeder.GetCarreras(_hostEnvironment));
 
             base.OnModelCreating(modelBuilder);

@@ -30,5 +30,15 @@ namespace PrestamosBiblioteca.DataAccess
                 .ToString(Formatting.None));
             return carreras;
         }
+
+        public static IEnumerable<Facultad> GetFacultades(IHostEnvironment hosting)
+        {
+            var filepath = Path.Combine(hosting.ContentRootPath, @"DataAccess\Data\facultades.json");
+            var json = JObject.Parse(File.ReadAllText(filepath));
+
+            var facultades = JsonConvert.DeserializeObject<IEnumerable<Facultad>>(json["Facultades"]
+                .ToString(Formatting.None));
+            return facultades;
+        }
     }
 }

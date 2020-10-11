@@ -55,7 +55,7 @@ namespace PrestamosBiblioteca.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("EquipoId,Codigo,Descripcion,Modelo,Disponibilidad,MarcaId")] Equipo equipo)
+        public async Task<IActionResult> Create([Bind("EquipoId,Codigo,Descripcion,Modelo,MarcaId")] Equipo equipo)
         {
             if (ModelState.IsValid)
             {
@@ -89,7 +89,7 @@ namespace PrestamosBiblioteca.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("EquipoId,Codigo,Descripcion,Modelo,Disponibilidad,MarcaId")] Equipo equipo)
+        public async Task<IActionResult> Edit(int id, [Bind("EquipoId,Codigo,Descripcion,Modelo,MarcaId")] Equipo equipo)
         {
             if (id != equipo.EquipoId)
             {
@@ -100,8 +100,13 @@ namespace PrestamosBiblioteca.Controllers
             {
                 try
                 {
+                    if (_context.Prestamos.ToList().Any(p => p.EquipoId == equipo.EquipoId && !p.Entregado))
+                    {
+                        equipo.Reservado = true;
+                    }
                     _context.Update(equipo);
                     await _context.SaveChangesAsync();
+                    
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -109,10 +114,8 @@ namespace PrestamosBiblioteca.Controllers
                     {
                         return NotFound();
                     }
-                    else
-                    {
-                        throw;
-                    }
+
+                    throw;
                 }
                 return RedirectToAction(nameof(Index));
             }

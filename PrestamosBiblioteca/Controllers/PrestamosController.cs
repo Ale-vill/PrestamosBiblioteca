@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PrestamosBiblioteca.DataAccess;
 using PrestamosBiblioteca.Models;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -20,7 +21,7 @@ namespace PrestamosBiblioteca.Controllers
         // GET: Prestamos
         public async Task<IActionResult> Index()
         {
-            var appDbContext = _context.Prestamos.Include(p => p.Equipo);
+            var appDbContext = _context.Prestamos.Include(p => p.Equipo).Include(p => p.Usuario);
             return View(await appDbContext.ToListAsync());
         }
 
@@ -34,6 +35,7 @@ namespace PrestamosBiblioteca.Controllers
 
             var prestamo = await _context.Prestamos
                 .Include(p => p.Equipo)
+                .Include(p => p.Usuario)
                 .FirstOrDefaultAsync(m => m.PrestamoId == id);
             if (prestamo == null)
             {
@@ -44,10 +46,11 @@ namespace PrestamosBiblioteca.Controllers
         }
 
         // GET: Prestamos/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            var equipos = _context.Equipos.Where(e => e.Disponibilidad);
-            ViewData["EquipoId"] = new SelectList(equipos, "EquipoId", "Codigo");
+            
+            ViewData["EquipoId"] = new SelectList(await GetEquiposDisponiblesAsync(), "EquipoId", "Codigo");
+            ViewData["UsuarioId"] = new SelectList(_context.Usuarios, "UsuarioId", "Codigo");
             return View();
         }
 
@@ -56,16 +59,21 @@ namespace PrestamosBiblioteca.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("PrestamoId,Entrega,Devolucion,Observacion,UsuarioId,EquipoId")] Prestamo prestamo)
+        public async Task<IActionResult> Create([Bind("PrestamoId,Entrega,Devolucion,Observacion,UsuarioId,EquipoId,Entregado")] Prestamo prestamo)
         {
             if (ModelState.IsValid)
             {
                 _context.Add(prestamo);
+                var equipo = await _context.Equipos.FirstOrDefaultAsync(e => e.EquipoId == prestamo.EquipoId);
+                if (equipo != null)
+                {
+                    equipo.Reservado = true;
+                }
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            var equipos = _context.Equipos.Where(e => e.Disponibilidad);
-            ViewData["EquipoId"] = new SelectList(equipos, "EquipoId", "Codigo", prestamo.EquipoId);
+            ViewData["EquipoId"] = new SelectList(await GetEquiposDisponiblesAsync(), "EquipoId", "Codigo", prestamo.EquipoId);
+            ViewData["UsuarioId"] = new SelectList(_context.Usuarios, "UsuarioId", "Codigo", prestamo.UsuarioId);
             return View(prestamo);
         }
 
@@ -78,12 +86,20 @@ namespace PrestamosBiblioteca.Controllers
             }
 
             var prestamo = await _context.Prestamos.FindAsync(id);
+
             if (prestamo == null)
             {
                 return NotFound();
             }
-            var equipos = _context.Equipos.Where(e => e.Disponibilidad);
+
+            var equipos = await GetEquiposDisponiblesAsync();
+            if (equipos.Count<=0)
+            {
+                equipos =_context.Equipos.Where(e => e.EquipoId == prestamo.EquipoId).ToList();
+            }
+
             ViewData["EquipoId"] = new SelectList(equipos, "EquipoId", "Codigo", prestamo.EquipoId);
+            ViewData["UsuarioId"] = new SelectList(_context.Usuarios, "UsuarioId", "Codigo", prestamo.UsuarioId);
             return View(prestamo);
         }
 
@@ -92,7 +108,7 @@ namespace PrestamosBiblioteca.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("PrestamoId,Entrega,Devolucion,Observacion,UsuarioId,EquipoId")] Prestamo prestamo)
+        public async Task<IActionResult> Edit(int id, [Bind("PrestamoId,Entrega,Devolucion,Observacion,UsuarioId,EquipoId,Entregado")] Prestamo prestamo)
         {
             if (id != prestamo.PrestamoId)
             {
@@ -104,6 +120,11 @@ namespace PrestamosBiblioteca.Controllers
                 try
                 {
                     _context.Update(prestamo);
+                    if (prestamo.Entregado)
+                    {
+                        var equipo = await _context.Equipos.FirstOrDefaultAsync(e => e.EquipoId == prestamo.EquipoId);
+                        if (equipo != null) equipo.Reservado = false;
+                    }
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
@@ -112,15 +133,19 @@ namespace PrestamosBiblioteca.Controllers
                     {
                         return NotFound();
                     }
-                    else
-                    {
-                        throw;
-                    }
+
+                    throw;
                 }
                 return RedirectToAction(nameof(Index));
             }
-            var equipos = _context.Equipos.Where(e => e.Disponibilidad);
+
+            var equipos = await GetEquiposDisponiblesAsync();
+            if (equipos.Count<=0)
+            {
+                equipos =_context.Equipos.Where(e => e.EquipoId == prestamo.EquipoId).ToList();
+            }
             ViewData["EquipoId"] = new SelectList(equipos, "EquipoId", "Codigo", prestamo.EquipoId);
+            ViewData["UsuarioId"] = new SelectList(_context.Usuarios, "UsuarioId", "Codigo", prestamo.UsuarioId);
             return View(prestamo);
         }
 
@@ -134,6 +159,7 @@ namespace PrestamosBiblioteca.Controllers
 
             var prestamo = await _context.Prestamos
                 .Include(p => p.Equipo)
+                .Include(p => p.Usuario)
                 .FirstOrDefaultAsync(m => m.PrestamoId == id);
             if (prestamo == null)
             {
@@ -150,6 +176,11 @@ namespace PrestamosBiblioteca.Controllers
         {
             var prestamo = await _context.Prestamos.FindAsync(id);
             _context.Prestamos.Remove(prestamo);
+            if (!prestamo.Entregado)
+            {
+                var equipo = await _context.Equipos.FirstOrDefaultAsync(e => e.EquipoId == prestamo.EquipoId);
+                if (equipo != null) equipo.Reservado = false;
+            }
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
@@ -157,6 +188,11 @@ namespace PrestamosBiblioteca.Controllers
         private bool PrestamoExists(int id)
         {
             return _context.Prestamos.Any(e => e.PrestamoId == id);
+        }
+
+        private async Task<List<Equipo>> GetEquiposDisponiblesAsync()
+        {
+            return await _context.Equipos.Where(e=> !e.Reservado).ToListAsync();
         }
     }
 }

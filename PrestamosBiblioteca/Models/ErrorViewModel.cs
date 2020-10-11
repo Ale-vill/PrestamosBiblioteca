@@ -1,5 +1,3 @@
-using System;
-
 namespace PrestamosBiblioteca.Models
 {
     public class ErrorViewModel
